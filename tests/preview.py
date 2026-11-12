@@ -20,19 +20,20 @@ PREVIEW_LOCK = threading.Lock()
 
 def snapshot_fixture(project_key, source, target=False):
     """Make inspectable synthetic configs with added/deleted/modified examples."""
-    if source in ('SPLIT', 'PREPARE', 'MAPPINGS', 'IF_RULE', 'TRAINING'):
-        fixture_file = {'SPLIT': 'split_recipe.json', 'PREPARE': 'prepare_recipe.json', 'MAPPINGS': 'prepare_mappings.json', 'IF_RULE': 'prepare_if_rule.json', 'TRAINING': 'training_recipe.json'}[source]
+    if source in ('SPLIT', 'PREPARE', 'MAPPINGS', 'IF_RULE', 'TRAINING', 'SYNC', 'SCORING'):
+        fixture_file = {'SPLIT': 'split_recipe.json', 'PREPARE': 'prepare_recipe.json', 'MAPPINGS': 'prepare_mappings.json', 'IF_RULE': 'prepare_if_rule.json', 'TRAINING': 'training_recipe.json', 'SYNC': 'sync_recipe.json', 'SCORING': 'scoring_recipe.json'}[source]
         fixtures = json.loads((Path(__file__).parent / 'fixtures' / fixture_file).read_text())
         recipe = fixtures['after' if target else 'before']
         definition = recipe['config']['definition']
-        inputs = [item['ref'] for item in definition['inputs']['main']['items']]
+        inputs = [item['ref'] for role in definition['inputs'].values() for item in role['items']]
+        models = [item['ref'] for item in definition['inputs'].get('model', {}).get('items', [])]
         outputs = [item['ref'] for item in definition['outputs']['main']['items']]
         recipe.update(id=recipe['name'], type='RUNNABLE_RECIPE', subType=definition['type'], coverage='settings',
                       inputs=inputs, outputs=outputs, zoneId='default', sharedWith=[])
         objects = {recipe['id']: recipe}
         for name in inputs + outputs:
-            objects[name] = dict(id=name, name=name, kind='model' if source == 'TRAINING' and name in outputs else 'dataset',
-                                 type='COMPUTABLE_SAVED_MODEL' if source == 'TRAINING' and name in outputs else 'COMPUTABLE_DATASET',
+            objects[name] = dict(id=name, name=name, kind='model' if (source == 'TRAINING' and name in outputs) or name in models else 'dataset',
+                                 type='COMPUTABLE_SAVED_MODEL' if (source == 'TRAINING' and name in outputs) or name in models else 'COMPUTABLE_DATASET',
                                  config={'type': 'Snowflake'}, inputs=[recipe['id']] if name in outputs else [],
                                  outputs=[recipe['id']] if name in inputs else [], zoneId='default', sharedWith=[])
         return {'schemaVersion': 1, 'projectKey': project_key, 'warnings': [], 'model': {'objects': objects, 'zones': {}}}
@@ -213,7 +214,7 @@ class Handler(BaseHTTPRequestHandler):
             mime = 'image/svg+xml' if icon.suffix == '.svg' else 'image/png'
             status, content = (200, icon.read_bytes()) if icon.is_file() else (404, '')
         elif url.path == '/api/projects':
-            content = json.dumps({'projects': [{'key': 'PARENT', 'name': 'Customer analytics'}, {'key': 'BRANCH', 'name': 'Customer analytics · feature branch'}, {'key': 'IMAGES', 'name': 'Images and documents'}, {'key': 'SPLIT', 'name': 'Split recipe comparison'}, {'key': 'PREPARE', 'name': 'Prepare recipe comparison'}, {'key': 'TRAINING', 'name': 'Model training comparison'}, {'key': 'MAPPINGS', 'name': 'Prepare mappings comparison'}, {'key': 'IF_RULE', 'name': 'Visual If Rule comparison'}, {'key': 'EMPTY', 'name': 'Empty project'}, {'key': 'DENIED', 'name': 'Unavailable project'}], 'currentProjectKey': 'PARENT'})
+            content = json.dumps({'projects': [{'key': 'PARENT', 'name': 'Customer analytics'}, {'key': 'BRANCH', 'name': 'Customer analytics · feature branch'}, {'key': 'IMAGES', 'name': 'Images and documents'}, {'key': 'SPLIT', 'name': 'Split recipe comparison'}, {'key': 'PREPARE', 'name': 'Prepare recipe comparison'}, {'key': 'TRAINING', 'name': 'Model training comparison'}, {'key': 'SYNC', 'name': 'Sync recipe comparison'}, {'key': 'SCORING', 'name': 'Model scoring comparison'}, {'key': 'MAPPINGS', 'name': 'Prepare mappings comparison'}, {'key': 'IF_RULE', 'name': 'Visual If Rule comparison'}, {'key': 'EMPTY', 'name': 'Empty project'}, {'key': 'DENIED', 'name': 'Unavailable project'}], 'currentProjectKey': 'PARENT'})
         elif url.path == '/api/branches':
             project = query.get('projectKey', [''])[0]
             if project == 'DENIED':

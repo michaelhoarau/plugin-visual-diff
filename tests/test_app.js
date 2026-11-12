@@ -1321,3 +1321,52 @@ test('JSON copy buttons copy the selected side and full Flow independently, leav
     await tick();
     assert.equal(ui.clipboardWrites.at(-1), JSON.stringify(after, null, 2));
 });
+
+for (const [name, recipeName, previous, next] of [
+    ['sync', 'Sync', 'Previous Write mode: Overwrite', 'New Write mode: Append'],
+    ['scoring', 'model scoring', 'Previous Classification threshold (when override is on): 0', 'New Classification threshold (when override is on): 0.65']
+]) test(`${recipeName} inspector opens paired sections, highlights meaningful changes, and handles missing versions safely`, async () => {
+    const { before, after } = structuredClone(require(`./fixtures/${name}_recipe.json`));
+    const unsafe = '<img src=x onerror=alert(1)>';
+    after.config.definition.params.customOption = unsafe;
+    const missing = { kind: before.kind, subType: before.subType, coverage: 'graph-only', config: {} };
+    const graph = { nodes: ['modified', 'added', 'deleted', 'missing', 'dataset'].map((id) => ({
+        id, name: id, kind: id === 'dataset' ? 'dataset' : before.kind, diffStatus: 'modified'
+    })), edges: [] };
+    const ui = await setup(async () => ({ branches: [child] }), async () => graph, undefined, undefined, undefined, undefined,
+        () => ({ graph, baseline: { model: { objects: { modified: before, deleted: before } } },
+            target: { model: { objects: { modified: after, added: after, missing, dataset: { kind: 'dataset' } } } },
+            counts: { modified: 1, added: 1, deleted: 1, unchanged: 0 } }));
+    await confirmBranch(ui);
+    const inspect = (id) => { ui.get('diff-object').value = id; ui.get('diff-object').fire('change'); };
+    const descendants = (node) => [node, ...node.children.flatMap(descendants)];
+    const nodes = () => descendants(ui.get('visual-inspector-panel'));
+    inspect('modified');
+    assert.equal(ui.get('visual-inspector-tab').attributes['aria-selected'], 'true');
+    assert.equal(ui.get('recipe-code-tab').hidden, true);
+    assert.equal(ui.get('json-diff-panel').hidden, true);
+    assert.ok(nodes().some((node) => node.attributes['aria-label'] === previous));
+    assert.ok(nodes().some((node) => node.attributes['aria-label'] === next));
+    assert.ok(!nodes().some((node) => /^(Previous|New) Input dataset:/.test(node.attributes['aria-label'] || '')));
+    assert.ok(nodes().some((node) => node.textContent === unsafe));
+    assert.ok(nodes().every((node) => node.innerHTML === undefined));
+    assert.ok(nodes().some((node) => node.className === 'prepare-checkbox is-checked'));
+    const sections = nodes().filter((node) => node.className === 'prepare-step');
+    assert.ok(sections.some((node) => node.attributes['data-diff-status'] === 'modified' && node.open));
+    assert.ok(sections.some((node) => node.attributes['data-diff-status'] === 'unchanged' && !node.open));
+    ui.get('visual-inspector-tab').fire('keydown', { key: 'Home' });
+    assert.equal(ui.get('json-diff-panel').hidden, false);
+    assert.ok(ui.get('json-diff-rows').children.length > 2);
+    ui.get('json-diff-tab').fire('keydown', { key: 'ArrowRight' });
+    assert.equal(ui.get('visual-inspector-panel').hidden, false);
+    for (const id of ['added', 'deleted']) {
+        inspect(id);
+        assert.ok(nodes().some((node) => node.textContent === `No ${recipeName} recipe in this version.`));
+        assert.ok(nodes().some((node) => /Section (added|removed)\./.test(node.textContent)));
+    }
+    inspect('missing');
+    assert.ok(nodes().some((node) => /settings are unavailable/.test(node.textContent)));
+    assert.ok(!nodes().some((node) => node.className === 'prepare-step'));
+    inspect('dataset');
+    assert.equal(ui.get('visual-inspector-tab').hidden, true);
+});

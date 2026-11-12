@@ -1,0 +1,230 @@
+{
+  "before": {
+    "config": {
+      "definition": {
+        "checklists": {
+          "checklists": []
+        },
+        "customFields": {},
+        "customMeta": {
+          "kv": {}
+        },
+        "dkuProperties": [],
+        "hashPropagationBehavior": "INHERIT",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "deps": [],
+                "ref": "revenue_prediction"
+              }
+            ]
+          }
+        },
+        "labels": [],
+        "maxRunningActivities": 0,
+        "name": "compute_revenue_prediction_copy",
+        "neverRecomputeExistingPartitions": false,
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "appendMode": false,
+                "ref": "revenue_prediction_copy"
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineParams": {
+            "cdePipelineParams": {
+              "pipelineAllowMerge": true,
+              "pipelineAllowStart": true
+            },
+            "containerSelection": {
+              "containerMode": "INHERIT"
+            },
+            "hive": {
+              "addDkuUdf": false,
+              "executionEngine": "HIVESERVER2",
+              "hiveconf": [],
+              "inheritConf": "default",
+              "skipPrerunValidate": false
+            },
+            "impala": {
+              "forceStreamMode": true
+            },
+            "lowerCaseSchemaIfEngineRequiresIt": false,
+            "maxThreads": 4,
+            "redshiftParams": {
+              "writeDatesInParquet": true
+            },
+            "sparkSQL": {
+              "executionEngine": "SPARK_SUBMIT",
+              "overwriteOutputSchema": false,
+              "pipelineAllowMerge": true,
+              "pipelineAllowStart": true,
+              "readParams": {
+                "autoModeRepartitionInto": 10,
+                "map": {},
+                "mode": "AUTO"
+              },
+              "skipPrerunValidate": false,
+              "sparkConfig": {
+                "conf": [],
+                "inheritConf": "default"
+              },
+              "useGlobalMetastore": false
+            },
+            "sqlPipelineParams": {
+              "pipelineAllowMerge": true,
+              "pipelineAllowStart": true
+            },
+            "synapseParams": {
+              "usePolybase": false
+            },
+            "tdchParams": {
+              "numberOfExecutors": 2,
+              "splitMode": "DEFAULT"
+            }
+          },
+          "forcePipelineableForTests": false,
+          "schemaMode": "STRICT_SYNC"
+        },
+        "redispatchPartitioning": false,
+        "tags": [],
+        "type": "sync",
+        "variables": {}
+      },
+      "payload": ""
+    },
+    "coverage": "settings",
+    "id": "[\"RUNNABLE_RECIPE\",\"compute_revenue_prediction_copy\"]",
+    "inputs": [
+      "[\"COMPUTABLE_DATASET\",\"revenue_prediction\"]"
+    ],
+    "kind": "recipe",
+    "name": "compute_revenue_prediction_copy",
+    "outputs": [
+      "[\"COMPUTABLE_DATASET\",\"revenue_prediction_copy\"]"
+    ],
+    "sharedWith": [],
+    "subType": "sync",
+    "type": "RUNNABLE_RECIPE",
+    "zoneId": "default"
+  },
+  "after": {
+    "config": {
+      "definition": {
+        "checklists": {
+          "checklists": []
+        },
+        "customFields": {},
+        "customMeta": {
+          "kv": {}
+        },
+        "dkuProperties": [],
+        "hashPropagationBehavior": "INHERIT",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "deps": [],
+                "ref": "revenue_prediction"
+              }
+            ]
+          }
+        },
+        "labels": [],
+        "maxRunningActivities": 0,
+        "name": "compute_revenue_prediction_copy",
+        "neverRecomputeExistingPartitions": false,
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "appendMode": true,
+                "ref": "revenue_prediction_copy"
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineParams": {
+            "cdePipelineParams": {
+              "pipelineAllowMerge": true,
+              "pipelineAllowStart": true
+            },
+            "containerSelection": {
+              "containerMode": "INHERIT"
+            },
+            "hive": {
+              "addDkuUdf": false,
+              "executionEngine": "HIVESERVER2",
+              "hiveconf": [],
+              "inheritConf": "default",
+              "skipPrerunValidate": false
+            },
+            "impala": {
+              "forceStreamMode": true
+            },
+            "lowerCaseSchemaIfEngineRequiresIt": false,
+            "maxThreads": 8,
+            "redshiftParams": {
+              "writeDatesInParquet": true
+            },
+            "sparkSQL": {
+              "executionEngine": "SPARK_SUBMIT",
+              "overwriteOutputSchema": false,
+              "pipelineAllowMerge": true,
+              "pipelineAllowStart": true,
+              "readParams": {
+                "autoModeRepartitionInto": 10,
+                "map": {},
+                "mode": "AUTO"
+              },
+              "skipPrerunValidate": false,
+              "sparkConfig": {
+                "conf": [],
+                "inheritConf": "default"
+              },
+              "useGlobalMetastore": false
+            },
+            "sqlPipelineParams": {
+              "pipelineAllowMerge": true,
+              "pipelineAllowStart": true
+            },
+            "synapseParams": {
+              "usePolybase": false
+            },
+            "tdchParams": {
+              "numberOfExecutors": 2,
+              "splitMode": "DEFAULT"
+            }
+          },
+          "forcePipelineableForTests": false,
+          "schemaMode": "FREE_OUTPUT"
+        },
+        "redispatchPartitioning": false,
+        "tags": [],
+        "type": "sync",
+        "variables": {}
+      },
+      "payload": ""
+    },
+    "coverage": "settings",
+    "id": "[\"RUNNABLE_RECIPE\",\"compute_revenue_prediction_copy\"]",
+    "inputs": [
+      "[\"COMPUTABLE_DATASET\",\"revenue_prediction\"]"
+    ],
+    "kind": "recipe",
+    "name": "compute_revenue_prediction_copy",
+    "outputs": [
+      "[\"COMPUTABLE_DATASET\",\"revenue_prediction_copy\"]"
+    ],
+    "sharedWith": [],
+    "subType": "sync",
+    "type": "RUNNABLE_RECIPE",
+    "zoneId": "default"
+  }
+}

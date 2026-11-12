@@ -1,0 +1,197 @@
+{
+  "before": {
+    "config": {
+      "definition": {
+        "checklists": {
+          "checklists": []
+        },
+        "customFields": {},
+        "customMeta": {
+          "kv": {}
+        },
+        "dkuProperties": [],
+        "hashPropagationBehavior": "INHERIT",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "deps": [],
+                "ref": "web_new_customers_enriched"
+              }
+            ]
+          },
+          "model": {
+            "items": [
+              {
+                "deps": [],
+                "ref": "Vs6j4B8H"
+              }
+            ]
+          }
+        },
+        "labels": [],
+        "maxRunningActivities": 0,
+        "name": "score_web_new_customers_enriched",
+        "neverRecomputeExistingPartitions": false,
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "appendMode": false,
+                "ref": "revenue_prediction"
+              }
+            ]
+          }
+        },
+        "params": {
+          "containerSelection": {
+            "containerMode": "INHERIT"
+          }
+        },
+        "redispatchPartitioning": false,
+        "tags": [],
+        "type": "prediction_scoring",
+        "variables": {}
+      },
+      "payload": {
+        "filterInputColumns": false,
+        "forcedClassifierThreshold": 0,
+        "gpuConfig": {
+          "disabledCapabilities": [],
+          "params": {
+            "gpuAllowGrowth": false,
+            "gpuList": [
+              0
+            ],
+            "perGPUMemoryFraction": 0.5,
+            "useGpu": true
+          }
+        },
+        "keptInputColumns": [],
+        "outputProbabilities": true,
+        "overrideModelSpecifiedThreshold": false,
+        "sparkParams": {
+          "pipelineAllowMerge": null,
+          "pipelineAllowStart": null,
+          "sparkConf": null,
+          "sparkPreparedDFStorageLevel": null,
+          "sparkRepartitionNonHDFS": null
+        }
+      }
+    },
+    "coverage": "settings",
+    "id": "[\"RUNNABLE_RECIPE\",\"score_web_new_customers_enriched\"]",
+    "inputs": [
+      "[\"COMPUTABLE_DATASET\",\"web_new_customers_enriched\"]",
+      "[\"COMPUTABLE_SAVED_MODEL\",\"Vs6j4B8H\"]"
+    ],
+    "kind": "ml-recipe",
+    "name": "score_web_new_customers_enriched",
+    "outputs": [
+      "[\"COMPUTABLE_DATASET\",\"revenue_prediction\"]"
+    ],
+    "sharedWith": [],
+    "subType": "prediction_scoring",
+    "type": "RUNNABLE_RECIPE",
+    "zoneId": "default"
+  },
+  "after": {
+    "config": {
+      "definition": {
+        "checklists": {
+          "checklists": []
+        },
+        "customFields": {},
+        "customMeta": {
+          "kv": {}
+        },
+        "dkuProperties": [],
+        "hashPropagationBehavior": "INHERIT",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "deps": [],
+                "ref": "web_new_customers_enriched"
+              }
+            ]
+          },
+          "model": {
+            "items": [
+              {
+                "deps": [],
+                "ref": "Vs6j4B8H"
+              }
+            ]
+          }
+        },
+        "labels": [],
+        "maxRunningActivities": 0,
+        "name": "score_web_new_customers_enriched",
+        "neverRecomputeExistingPartitions": false,
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "appendMode": false,
+                "ref": "revenue_prediction"
+              }
+            ]
+          }
+        },
+        "params": {
+          "containerSelection": {
+            "containerMode": "INHERIT"
+          }
+        },
+        "redispatchPartitioning": false,
+        "tags": [],
+        "type": "prediction_scoring",
+        "variables": {}
+      },
+      "payload": {
+        "filterInputColumns": true,
+        "forcedClassifierThreshold": 0.65,
+        "gpuConfig": {
+          "disabledCapabilities": [],
+          "params": {
+            "gpuAllowGrowth": false,
+            "gpuList": [
+              0
+            ],
+            "perGPUMemoryFraction": 0.5,
+            "useGpu": false
+          }
+        },
+        "keptInputColumns": [
+          "customer_id",
+          "pages_visited"
+        ],
+        "outputProbabilities": false,
+        "overrideModelSpecifiedThreshold": true,
+        "sparkParams": {
+          "pipelineAllowMerge": null,
+          "pipelineAllowStart": null,
+          "sparkConf": null,
+          "sparkPreparedDFStorageLevel": null,
+          "sparkRepartitionNonHDFS": null
+        }
+      }
+    },
+    "coverage": "settings",
+    "id": "[\"RUNNABLE_RECIPE\",\"score_web_new_customers_enriched\"]",
+    "inputs": [
+      "[\"COMPUTABLE_DATASET\",\"web_new_customers_enriched\"]",
+      "[\"COMPUTABLE_SAVED_MODEL\",\"Vs6j4B8H\"]"
+    ],
+    "kind": "ml-recipe",
+    "name": "score_web_new_customers_enriched",
+    "outputs": [
+      "[\"COMPUTABLE_DATASET\",\"revenue_prediction\"]"
+    ],
+    "sharedWith": [],
+    "subType": "prediction_scoring",
+    "type": "RUNNABLE_RECIPE",
+    "zoneId": "default"
+  }
+}

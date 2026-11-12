@@ -546,6 +546,23 @@ The preview's **Model training comparison** project includes feature changes,
 hyperparameter changes, an enabled algorithm, a changed train/test ratio and
 added/removed settings.
 
+Sync and prediction model scoring recipes open **Visual Inspector** by default,
+using the same paired fields, checkboxes, expandable sections and red/green value
+highlights. Sync reads its definition parameters even when the payload is an
+empty string, showing schema handling, input/output datasets, append/overwrite
+mode, runtime settings and build behavior. Scoring shows its input dataset and
+saved model (including the model name when captured), output dataset, selected
+input columns, probability output, threshold override, GPU and runtime options.
+Threshold and column-selection labels explain when those stored values apply.
+Missing values remain distinct from false, zero, empty lists and null. I/O rows
+align by role and reference, so reordering outputs does not create false changes.
+Unknown parameters remain readable; full technical metadata remains in JSON diff.
+Graph-only and missing-settings captures have explicit notices.
+
+The preview includes **Sync recipe comparison** and **Model scoring comparison**
+projects based on the supplied project JSON. Their comparison versions demonstrate
+schema/write-mode changes and column/probability/threshold/GPU changes respectively.
+
 Step alignment uses unique IDs where available, otherwise exact processor content
 followed by unambiguous same-type edits between matching steps. Insertions do not
 shift downstream comparisons. Ambiguous repeated processors and reordered steps
@@ -573,7 +590,7 @@ From the repository root:
 
 ```sh
 node --check webapps/webapp/app.js
-node --test tests/test_app.js tests/test_layout.js tests/test_json_diff.js tests/test_split_inspector.js tests/test_prepare_inspector.js tests/test_training_inspector.js
+node --test tests/test_app.js tests/test_layout.js tests/test_json_diff.js tests/test_split_inspector.js tests/test_prepare_inspector.js tests/test_training_inspector.js tests/test_execution_inspector.js
 python3 -m unittest discover -s tests -v
 python3 tests/preview.py
 ```

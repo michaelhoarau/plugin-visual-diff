@@ -361,6 +361,99 @@
             signature: stable(group.fields.map(({ key, value }) => ({ key, value }))) })) };
     }
 
+    /** Sync stores its settings in the definition (its normal payload is an empty string).
+     * Scoring stores output options in payload and runtime options in definition.params.
+     * Both feed the same paired fields used by Prepare and training.
+     */
+    function syncRecipe(object, objects) { return executionRecipe(object, 'sync', objects); }
+    function scoringRecipe(object, objects) { return executionRecipe(object, 'prediction_scoring', objects); }
+    function executionRecipe(object, expectedType, objects = {}) {
+        const type = object?.config?.definition?.type || object?.subType;
+        if (!['recipe', 'ml-recipe'].includes(object?.kind) || type !== expectedType) return undefined;
+        const scoring = type === 'prediction_scoring';
+        const config = object.config, definition = config?.definition;
+        if (['graph-only', 'external-reference'].includes(object.coverage) || !record(definition) || (scoring && !record(config.payload))) {
+            return { unavailable: true, steps: [] };
+        }
+        const groups = new Map();
+        const labels = {
+            schemaMode: 'Schema handling', engineParams: 'Engine settings', maxThreads: 'Maximum threads',
+            lowerCaseSchemaIfEngineRequiresIt: 'Lowercase schema when required by the engine',
+            neverRecomputeExistingPartitions: 'Never recompute existing partitions', redispatchPartitioning: 'Redispatch partitioning',
+            maxRunningActivities: 'Maximum concurrent activities', hashPropagationBehavior: 'Hash propagation',
+            filterInputColumns: 'Keep only selected input columns', keptInputColumns: 'Input columns to keep (when filtering is on)',
+            outputProbabilities: 'Output class probabilities', overrideModelSpecifiedThreshold: 'Override model classification threshold',
+            forcedClassifierThreshold: 'Classification threshold (when override is on)',
+            containerSelection: 'Container selection', containerMode: 'Container mode',
+            gpuConfig: 'GPU settings', useGpu: 'Use GPU', gpuList: 'GPU devices', gpuAllowGrowth: 'Allow GPU memory growth',
+            perGPUMemoryFraction: 'Memory fraction per GPU', disabledCapabilities: 'Disabled capabilities', sparkParams: 'Spark settings',
+            pipelineAllowMerge: 'Allow pipeline merging', pipelineAllowStart: 'Allow pipeline start', sparkConf: 'Spark configuration',
+            sparkPreparedDFStorageLevel: 'Prepared DataFrame storage level', sparkRepartitionNonHDFS: 'Repartition non-HDFS inputs'
+        };
+        const label = (key) => labels[key] || key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]/g, ' ').replace(/^./, (c) => c.toUpperCase());
+        function add(title, path, caption, value) {
+            if (record(value) && Object.keys(value).length) {
+                Object.keys(value).sort().forEach((key) => add(title, [...path, key], key === 'params' ? caption : caption ? caption + ' / ' + label(key) : label(key), value[key]));
+                return;
+            }
+            if (!groups.has(title)) groups.set(title, []);
+            groups.get(title).push({ key: JSON.stringify(path), label: caption, value, signature: stable(value) });
+        }
+        // Use reference identity rather than array position for I/O; output reordering is neutral.
+        for (const direction of ['inputs', 'outputs']) {
+            const roles = definition[direction];
+            if (!record(roles)) {
+                add('Input and output', [direction], direction === 'inputs' ? 'Inputs' : 'Outputs', roles);
+                continue;
+            }
+            Object.keys(roles).sort().forEach((role) => {
+                const items = roles[role]?.items;
+                if (!Array.isArray(items) || !items.every((item) => record(item) && typeof item.ref === 'string')
+                        || new Set(items.map((item) => item.ref)).size !== items.length) {
+                    add('Input and output', [direction, role], label(role), roles[role]); return;
+                }
+                const title = direction === 'outputs' ? 'Output dataset' : role === 'model' ? 'Saved model' : 'Input dataset';
+                if (!items.length) add('Input and output', [direction, role], title, []);
+                [...items].sort((a, b) => a.ref.localeCompare(b.ref)).forEach((item) => {
+                    const path = [direction, role, item.ref];
+                    const model = role === 'model' && Object.values(objects).find((candidate) => candidate.kind === 'model'
+                        && (candidate.id === item.ref || candidate.id === JSON.stringify(['COMPUTABLE_SAVED_MODEL', item.ref])));
+                    add('Input and output', [...path, 'ref'], title, model?.name ? `${model.name} (${item.ref})` : item.ref);
+                    if (direction === 'outputs' && Object.hasOwn(item, 'appendMode')) {
+                        add('Input and output', [...path, 'appendMode'], 'Write mode', typeof item.appendMode === 'boolean' ? item.appendMode ? 'Append' : 'Overwrite' : item.appendMode);
+                    }
+                    for (const key of Object.keys(item).sort()) {
+                        if (key !== 'ref' && !(key === 'appendMode' && direction === 'outputs') && !(key === 'deps' && Array.isArray(item[key]) && !item[key].length)) {
+                            add('Input and output', [...path, key], title + ' / ' + label(key), item[key]);
+                        }
+                    }
+                });
+            });
+        }
+        for (const key of ['neverRecomputeExistingPartitions', 'redispatchPartitioning', 'maxRunningActivities', 'hashPropagationBehavior', 'variables']) {
+            if (Object.hasOwn(definition, key)) add('Build behavior', ['definition', key], label(key), definition[key]);
+        }
+        const params = definition.params;
+        if (record(params)) Object.keys(params).sort().forEach((key) => {
+            const title = /engine|container|spark|runtime/i.test(key) ? 'Runtime' : !scoring && key === 'schemaMode' ? 'Synchronization' : 'Additional settings';
+            const value = key === 'schemaMode' ? ({ STRICT_SYNC: 'Strict schema synchronization', FREE_OUTPUT: 'Free output schema' }[params[key]] || params[key]) : params[key];
+            add(title, ['definition', 'params', key], label(key), value);
+        });
+        else if (params !== undefined) add('Additional settings', ['definition', 'params'], 'Captured parameters', params);
+        if (scoring) Object.keys(config.payload).sort().forEach((key) => {
+            const title = ['filterInputColumns', 'keptInputColumns'].includes(key) ? 'Input columns'
+                : ['outputProbabilities', 'overrideModelSpecifiedThreshold', 'forcedClassifierThreshold'].includes(key) ? 'Prediction output'
+                : key === 'gpuConfig' ? 'GPU' : key === 'sparkParams' ? 'Runtime' : 'Additional settings';
+            add(title, ['payload', key], label(key), config.payload[key]);
+        });
+        else if (config.payload !== undefined && config.payload !== '') add('Additional settings', ['payload'], 'Captured payload', config.payload);
+        const order = ['Input and output', 'Synchronization', 'Input columns', 'Prediction output', 'GPU', 'Runtime', 'Build behavior', 'Additional settings'];
+        return { steps: order.filter((title) => groups.has(title)).map((title, index) => ({
+            index, title, type: 'recipe-section', identity: title, known: true, fields: groups.get(title),
+            signature: stable(groups.get(title).map(({ key, value }) => ({ key, value })))
+        })) };
+    }
+
     /** Sequence alignment: exact steps/unique IDs first, then unambiguous same-type edits within gaps.
      * Reordered steps can appear as removed/added; repeated ambiguous edits are never guessed.
      * Sparse LIS keeps memory bounded even for large Prepare scripts.
@@ -428,5 +521,5 @@
         suffixLeft.forEach((step, index) => emit(step, suffixRight[index]));
         return rows;
     }
-    return { trainingRecipe, jsonRows, codeRows, recipeCode, splitRecipe, splitConditionRows, prepareRecipe, prepareStepRows, prepareMapping, prepareMappingRows, prepareIfRule };
+    return { syncRecipe, scoringRecipe, trainingRecipe, jsonRows, codeRows, recipeCode, splitRecipe, splitConditionRows, prepareRecipe, prepareStepRows, prepareMapping, prepareMappingRows, prepareIfRule };
 }));
