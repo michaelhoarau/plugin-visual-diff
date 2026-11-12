@@ -73,6 +73,7 @@ async function setup(branchHandler, flowHandler = async () => ({ nodes: [], edge
     const radios = [new Element(), new Element()];
     const calls = [];
     let requestedSelection;
+    const clipboardWrites = [];
     runInNewContext(source, {
         document: {
             readyState: "complete", getElementById: get,
@@ -83,6 +84,7 @@ async function setup(branchHandler, flowHandler = async () => ({ nodes: [], edge
                 return element;
             }, dispatchEvent() {}
         },
+        navigator: { clipboard: { writeText: async (text) => { clipboardWrites.push(text); } } },
         window: { location: { href: "http://preview/" } },
         Option: Element, URL, CustomEvent: class {},
         FlowLayout, FlowComparison, ELK: class { layout(input) { return layoutHandler ? layoutHandler(input) : Promise.resolve(layoutDouble(input)); } },
@@ -142,7 +144,7 @@ async function setup(branchHandler, flowHandler = async () => ({ nodes: [], edge
     await tick();
     get("flow-screen").hidden = true;
     return {
-        get, calls,
+        get, calls, clipboardWrites,
         mode(value) { mode = value; radios[0].fire("change"); },
         baseline(key) { get("base-project").value = key; get("base-project").fire("change"); }
     };
@@ -1287,4 +1289,35 @@ test('Model training inspector reuses paired fields, checkboxes, granular highli
     assert.ok(!nodes().some((node) => node.className === 'prepare-step'));
     inspect('dataset');
     assert.equal(ui.get('visual-inspector-tab').hidden, true);
+});
+
+
+test('JSON copy buttons copy the selected side and full Flow independently, leaving absent sides disabled', async () => {
+    const before = { objects: { changed: { name: 'Before', config: { code: '<script>\nvalue' } } }, zones: {} };
+    const after = { objects: { changed: { name: 'After', config: { enabled: false } }, added: { name: 'New' } }, zones: {} };
+    const graph = { nodes: [{ id: 'changed', name: 'Changed', kind: 'dataset', diffStatus: 'modified' },
+        { id: 'added', name: 'New', kind: 'dataset', diffStatus: 'added' }], edges: [] };
+    const ui = await setup(async () => ({ branches: [child] }), async () => graph, undefined, undefined, undefined, undefined,
+        () => ({ graph, baseline: { model: before }, target: { model: after }, counts: { deleted: 0, modified: 1, added: 1, unchanged: 0 } }));
+    await confirmBranch(ui);
+    ui.get('diff-object').value = 'changed';
+    ui.get('diff-object').fire('change');
+    for (const id of ['json-baseline-copy', 'json-target-copy', 'flow-json-baseline-copy', 'flow-json-target-copy']) {
+        ui.get(id).fire('click');
+        await tick();
+    }
+    assert.deepEqual(ui.clipboardWrites, [before.objects.changed, after.objects.changed, before, after].map((value) => JSON.stringify(value, null, 2)));
+    ui.get('diff-object').value = 'added';
+    ui.get('diff-object').fire('change');
+    assert.equal(ui.get('json-baseline-copy').disabled, true);
+    assert.equal(ui.get('json-target-copy').disabled, false);
+    ui.get('json-baseline-copy').fire('click');
+    await tick();
+    assert.equal(ui.clipboardWrites.length, 4);
+    ui.get('diff-object').value = '';
+    ui.get('diff-object').fire('change');
+    assert.equal(ui.get('json-baseline-copy').disabled, false);
+    ui.get('json-target-copy').fire('click');
+    await tick();
+    assert.equal(ui.clipboardWrites.at(-1), JSON.stringify(after, null, 2));
 });

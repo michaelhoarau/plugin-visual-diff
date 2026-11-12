@@ -1333,12 +1333,54 @@
         panel.append(element('p', training ? 'Captured recipe settings are shown here. Full configuration is available in JSON diff. Trained model binaries and execution results are not compared.' : 'Editor preview and layout state are omitted here. Engine, sampling, extra metadata and the full captured configuration remain available in JSON diff.', 'field-note'));
     }
 
+    /** Copy the complete JSON value, excluding diff alignment and line numbers. */
+    async function copyJson(side, wholeFlow) {
+        if (!currentComparison) return;
+        const prefix = `${wholeFlow ? 'flow-json' : 'json'}-${side}`;
+        const status = $(prefix + '-copy-status');
+        const model = currentComparison[side].model;
+        const id = wholeFlow ? '' : $("diff-object").value;
+        const value = id ? model.objects[id] : model;
+        if (value === undefined) return;
+        const text = JSON.stringify(value, null, 2);
+        status.textContent = '';
+        try {
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (_) {
+                // DSS may run on HTTP or in an iframe without Clipboard API access.
+                const field = document.createElement('textarea');
+                field.value = text;
+                field.setAttribute('readonly', '');
+                field.style.position = 'fixed';
+                field.style.opacity = '0';
+                const focused = document.activeElement;
+                (wholeFlow ? $("json-comparison") : $("object-inspector")).append(field);
+                try {
+                    field.select();
+                    if (!document.execCommand('copy')) throw new Error('Copy failed');
+                } finally {
+                    field.remove();
+                    focused?.focus();
+                }
+            }
+            status.textContent = 'Copied';
+        } catch (_) {
+            status.textContent = 'Copy failed. Please select and copy the JSON.';
+        }
+        setTimeout(() => { status.textContent = ''; }, 3000);
+    }
+
     /** Render JSON or source lines as text so payloads cannot inject HTML. */
     function renderJsonDiff() {
         if (!currentComparison) return;
         const id = $("diff-object").value;
         const before = id ? currentComparison.baseline.model.objects[id] : currentComparison.baseline.model;
         const after = id ? currentComparison.target.model.objects[id] : currentComparison.target.model;
+        ['baseline', 'target'].forEach((side) => {
+            $(`json-${side}-copy`).disabled = (side === 'baseline' ? before : after) === undefined;
+            $(`json-${side}-copy-status`).textContent = '';
+        });
         const beforeCode = FlowComparison.recipeCode(before);
         const afterCode = FlowComparison.recipeCode(after);
         const hasCode = Boolean(id) && (beforeCode !== undefined || afterCode !== undefined);
@@ -1465,6 +1507,11 @@
             if ($("refresh-flow").disabled) return;
             iconRevision = String(Date.now());
             showFlow();
+        });
+        ['baseline', 'target'].forEach((side) => {
+            [false, true].forEach((wholeFlow) => {
+                $(`${wholeFlow ? 'flow-json' : 'json'}-${side}-copy`).addEventListener('click', () => copyJson(side, wholeFlow));
+            });
         });
         $("diff-object").addEventListener("change", () => inspectObject($("diff-object").value));
         $("open-inspector").addEventListener("click", () => inspectObject($("diff-object").value, $("open-inspector")));

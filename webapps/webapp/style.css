@@ -185,6 +185,13 @@ body:has(.object-inspector[open]) { overflow: hidden; }
 .json-diff-scroll { max-height: 520px; overflow: auto; margin-top: 12px; }
 .json-diff { border-collapse: collapse; table-layout: fixed; width: 100%; font: 12px ui-monospace, SFMono-Regular, Consolas, monospace; }
 .json-diff th { position: sticky; top: 0; background: #edf2f7; text-align: left; padding: 12px; width: 50%; z-index: 1; overflow-wrap: anywhere; }
+.json-diff-heading { display: flex; align-items: center; gap: 8px; }
+.json-diff-heading > span:first-child { flex: 1; min-width: 0; }
+.json-copy { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; padding: 5px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: #64748b; cursor: pointer; }
+.json-copy:hover:not(:disabled) { background: #dce5ef; color: #213348; }
+.json-copy:focus-visible { outline: 2px solid #247b73; outline-offset: 2px; }
+.json-copy:disabled { opacity: .4; }
+.json-copy-status { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 400; color: #64748b; }
 .json-diff td { vertical-align: top; border-right: 1px solid #e2e8f0; padding: 0 8px; }
 .json-diff pre { display: inline; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
 .json-line-number { display: inline-block; width: 35px; color: #64748b; user-select: none; }
