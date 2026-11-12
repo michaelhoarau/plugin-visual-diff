@@ -1,0 +1,238 @@
+{
+  "before": {
+    "kind": "recipe",
+    "name": "split_plik-downlads-metadata",
+    "config": {
+      "definition": {
+        "type": "split",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "plik-downlads-metadata"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "plik-small-files",
+                "appendMode": false
+              },
+              {
+                "ref": "plik-medium-files",
+                "appendMode": false
+              },
+              {
+                "ref": "plik-large-files",
+                "appendMode": false
+              }
+            ]
+          }
+        }
+      },
+      "payload": {
+        "mode": "RANGE",
+        "column": "archive_uncompressed_size",
+        "defaultOutputIndex": 2,
+        "preFilter": {
+          "enabled": true,
+          "distinct": false,
+          "uiData": {
+            "mode": "&&",
+            "conditions": [
+              {
+                "input": "archive_uncompressed_size",
+                "operator": "not empty string",
+                "num": 0,
+                "col": "thread_id"
+              },
+              {
+                "input": "archive_uncompressed_size",
+                "operator": ">  [number]",
+                "num": 0
+              },
+              {
+                "input": "archive_file_count",
+                "operator": "== [number]",
+                "num": 1
+              }
+            ]
+          }
+        },
+        "rangeSplits": [
+          {
+            "outputIndex": 0,
+            "filter": {
+              "enabled": true,
+              "uiData": {
+                "mode": "&&",
+                "conditions": [
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": ">= [number]",
+                    "num": 0
+                  },
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": "<  [number]",
+                    "num": 10000000
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "outputIndex": 1,
+            "filter": {
+              "enabled": true,
+              "uiData": {
+                "mode": "&&",
+                "conditions": [
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": ">= [number]",
+                    "num": 10000000
+                  },
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": "<  [number]",
+                    "num": 50000000
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "randomSplits": [
+          {
+            "outputIndex": 0,
+            "share": 50
+          }
+        ],
+        "engineParams": {
+          "containerSelection": {
+            "containerMode": "INHERIT"
+          }
+        }
+      }
+    }
+  },
+  "after": {
+    "kind": "recipe",
+    "name": "split_plik-downlads-metadata",
+    "config": {
+      "definition": {
+        "type": "split",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "plik-downlads-metadata"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "plik-medium-logs",
+                "appendMode": false
+              },
+              {
+                "ref": "plik-large-logs",
+                "appendMode": false
+              },
+              {
+                "ref": "plik-small-files",
+                "appendMode": false
+              }
+            ]
+          }
+        }
+      },
+      "payload": {
+        "mode": "RANGE",
+        "column": "archive_uncompressed_size",
+        "defaultOutputIndex": 1,
+        "preFilter": {
+          "enabled": true,
+          "distinct": false,
+          "uiData": {
+            "mode": "&&",
+            "conditions": [
+              {
+                "input": "archive_uncompressed_size",
+                "operator": "not empty string",
+                "num": 0
+              },
+              {
+                "input": "archive_uncompressed_size",
+                "operator": ">  [number]",
+                "num": 0
+              }
+            ]
+          }
+        },
+        "rangeSplits": [
+          {
+            "outputIndex": 2,
+            "filter": {
+              "enabled": true,
+              "uiData": {
+                "mode": "&&",
+                "conditions": [
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": ">= [number]",
+                    "num": 0
+                  },
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": "<  [number]",
+                    "num": 2000000
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "outputIndex": 0,
+            "filter": {
+              "enabled": true,
+              "uiData": {
+                "mode": "&&",
+                "conditions": [
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": ">= [number]",
+                    "num": 2000000
+                  },
+                  {
+                    "input": "archive_uncompressed_size",
+                    "operator": "<  [number]",
+                    "num": 50000000
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "randomSplits": [
+          {
+            "outputIndex": 0,
+            "share": 50
+          }
+        ],
+        "engineParams": {
+          "containerSelection": {
+            "containerMode": "INHERIT"
+          }
+        }
+      }
+    }
+  }
+}

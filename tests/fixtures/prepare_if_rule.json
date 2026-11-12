@@ -1,0 +1,164 @@
+{
+  "before": {
+    "name": "prepare_visual_if_rule",
+    "kind": "recipe",
+    "subType": "shaker",
+    "config": {
+      "definition": {
+        "type": "shaker",
+        "name": "prepare_visual_if_rule",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers_enriched",
+                "appendMode": false
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineType": "DSS"
+        }
+      },
+      "payload": {
+        "origin": "PREPARE_RECIPE",
+        "steps": [
+          {
+            "type": "VisualIfRule",
+            "disabled": false,
+            "metaType": "PROCESSOR",
+            "params": {
+              "visualIfDesc": {
+                "ifThen": {
+                  "filter": {
+                    "enabled": true,
+                    "distinct": true,
+                    "uiData": {
+                      "mode": "&&",
+                      "conditions": [
+                        {
+                          "input": "pages_visited",
+                          "operator": ">  [number]",
+                          "num": 7
+                        }
+                      ]
+                    }
+                  },
+                  "actions": [
+                    {
+                      "outputColumnName": "test_visit_segment",
+                      "operator": "ASSIGN_VALUE",
+                      "value": "high"
+                    }
+                  ]
+                },
+                "elseIfThens": [],
+                "elseActions": [
+                  {
+                    "outputColumnName": "test_visit_segment",
+                    "operator": "ASSIGN_VALUE",
+                    "value": "standard"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "columnsSelection": {
+          "mode": "ALL"
+        }
+      }
+    }
+  },
+  "after": {
+    "name": "prepare_visual_if_rule",
+    "kind": "recipe",
+    "subType": "shaker",
+    "config": {
+      "definition": {
+        "type": "shaker",
+        "name": "prepare_visual_if_rule",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers_enriched",
+                "appendMode": false
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineType": "DSS"
+        }
+      },
+      "payload": {
+        "origin": "PREPARE_RECIPE",
+        "steps": [
+          {
+            "type": "VisualIfRule",
+            "disabled": false,
+            "metaType": "PROCESSOR",
+            "params": {
+              "visualIfDesc": {
+                "ifThen": {
+                  "filter": {
+                    "enabled": true,
+                    "distinct": true,
+                    "uiData": {
+                      "mode": "&&",
+                      "conditions": [
+                        {
+                          "input": "pages_visited",
+                          "operator": ">  [number]",
+                          "num": 10
+                        }
+                      ]
+                    }
+                  },
+                  "actions": [
+                    {
+                      "outputColumnName": "test_visit_segment",
+                      "operator": "ASSIGN_VALUE",
+                      "value": "high"
+                    }
+                  ]
+                },
+                "elseIfThens": [],
+                "elseActions": [
+                  {
+                    "outputColumnName": "test_visit_segment",
+                    "operator": "ASSIGN_VALUE",
+                    "value": "standard"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "columnsSelection": {
+          "mode": "ALL"
+        }
+      }
+    }
+  }
+}

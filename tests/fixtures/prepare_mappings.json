@@ -1,0 +1,174 @@
+{
+  "before": {
+    "name": "prepare_customer_mappings",
+    "kind": "recipe",
+    "subType": "shaker",
+    "config": {
+      "definition": {
+        "type": "shaker",
+        "name": "prepare_customer_mappings",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers_enriched",
+                "appendMode": false
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineType": "DSS"
+        }
+      },
+      "payload": {
+        "origin": "PREPARE_RECIPE",
+        "steps": [
+          {
+            "type": "FindReplace",
+            "disabled": false,
+            "metaType": "PROCESSOR",
+            "params": {
+              "columns": [
+                "segment"
+              ],
+              "appliesTo": "SINGLE_COLUMN",
+              "output": "",
+              "useDatasetForMapping": false,
+              "mapping": [
+                {
+                  "to": "control",
+                  "from": "False"
+                },
+                {
+                  "to": "campaign",
+                  "from": "True"
+                }
+              ],
+              "matching": "FULL_STRING",
+              "normalization": "EXACT",
+              "stopAfterFirstMatch": false
+            }
+          },
+          {
+            "type": "ColumnRenamer",
+            "disabled": false,
+            "metaType": "PROCESSOR",
+            "params": {
+              "renamings": [
+                {
+                  "to": "test_customer_id",
+                  "from": "customer_id"
+                },
+                {
+                  "to": "customer_segment",
+                  "from": "segment"
+                }
+              ]
+            }
+          }
+        ],
+        "columnsSelection": {
+          "mode": "ALL"
+        }
+      }
+    }
+  },
+  "after": {
+    "name": "prepare_customer_mappings",
+    "kind": "recipe",
+    "subType": "shaker",
+    "config": {
+      "definition": {
+        "type": "shaker",
+        "name": "prepare_customer_mappings",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers_enriched",
+                "appendMode": false
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineType": "DSS"
+        }
+      },
+      "payload": {
+        "origin": "PREPARE_RECIPE",
+        "steps": [
+          {
+            "type": "FindReplace",
+            "disabled": false,
+            "metaType": "PROCESSOR",
+            "params": {
+              "columns": [
+                "segment"
+              ],
+              "appliesTo": "SINGLE_COLUMN",
+              "output": "",
+              "useDatasetForMapping": false,
+              "mapping": [
+                {
+                  "to": "control",
+                  "from": "False"
+                },
+                {
+                  "to": "treatment",
+                  "from": "True"
+                },
+                {
+                  "from": "",
+                  "to": "unknown"
+                }
+              ],
+              "matching": "FULL_STRING",
+              "normalization": "EXACT",
+              "stopAfterFirstMatch": false
+            }
+          },
+          {
+            "type": "ColumnRenamer",
+            "disabled": false,
+            "metaType": "PROCESSOR",
+            "params": {
+              "renamings": [
+                {
+                  "to": "test_customer_identifier",
+                  "from": "customer_id"
+                },
+                {
+                  "to": "customer_segment",
+                  "from": "segment"
+                }
+              ]
+            }
+          }
+        ],
+        "columnsSelection": {
+          "mode": "ALL"
+        }
+      }
+    }
+  }
+}

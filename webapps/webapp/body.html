@@ -1,0 +1,173 @@
+<script src="../../resource/vendor/elk.bundled.js"></script>
+<script src="../../resource/flow-layout.js"></script>
+<script src="../../resource/flow-comparison.js"></script>
+<main class="flow-diff">
+    <header id="selection-header" class="page-header">
+        <div class="eyebrow">VISUAL FLOW DIFF</div>
+        <h1>Choose what to compare</h1>
+        <p>Trace how your Flow has changed. Start by choosing two project revisions.</p>
+    </header>
+
+    <form id="comparison-form">
+        <fieldset class="mode-picker">
+            <legend>Comparison scope</legend>
+            <label class="mode-option">
+                <input type="radio" name="scope" value="same-project" checked>
+                <span><strong>Within one project</strong><small>Compare two commits in the same project.</small></span>
+            </label>
+            <label class="mode-option">
+                <input type="radio" name="scope" value="cross-project">
+                <span><strong>Across project branches</strong><small>Compare a parent project with one of its branch projects.</small></span>
+            </label>
+        </fieldset>
+
+        <div id="project-status" class="notice" role="status" aria-live="polite">Loading projects…</div>
+        <button id="retry-projects" class="secondary" type="button" hidden>Retry loading projects</button>
+
+        <label class="tagged-filter">
+            <input id="tagged-commits-only" type="checkbox" role="switch">
+            <span>Tagged commits only <small>Applies to both sides</small></span>
+        </label>
+
+        <div class="revision-grid">
+            <section class="revision-card" aria-labelledby="base-title" data-side="base">
+                <header><span class="step">A</span><div><h2 id="base-title">Baseline</h2><p>Your starting point</p></div></header>
+                <label for="base-project">Project <span id="base-project-hint">/ parent project</span></label>
+                <select id="base-project" disabled><option value="">Select a project</option></select>
+                <small class="field-note">History of the selected baseline project.</small>
+                <label for="base-search">Commit</label>
+                <input id="base-search" type="search" placeholder="Search loaded commits by message, author or SHA" disabled>
+                <div id="base-status" class="commit-status" role="status" aria-live="polite">Select a project to see its commits.</div>
+                <div id="base-commits" class="commit-list" role="radiogroup" aria-label="Baseline commit"></div>
+                <button id="base-more" class="secondary load-more" type="button" hidden>Load older commits</button>
+            </section>
+            <section class="revision-card" aria-labelledby="target-title" data-side="target">
+                <header><span class="step">B</span><div><h2 id="target-title">Compare with</h2><p>The revision you want to inspect</p></div></header>
+                <label for="target-project">Project <span id="target-project-hint" hidden>/ branch project</span></label>
+                <select id="target-project" disabled aria-describedby="same-project-note"><option value="">Select a project</option></select>
+                <small id="same-project-note" class="field-note" role="status" aria-live="polite">Uses the same project as the baseline.</small>
+                <button id="retry-branches" class="secondary" type="button" hidden>Retry loading branches</button>
+                <label for="target-search">Commit</label>
+                <input id="target-search" type="search" placeholder="Search loaded commits by message, author or SHA" disabled>
+                <div id="target-status" class="commit-status" role="status" aria-live="polite">Select a project to see its commits.</div>
+                <div id="target-commits" class="commit-list" role="radiogroup" aria-label="Comparison commit"></div>
+                <button id="target-more" class="secondary load-more" type="button" hidden>Load older commits</button>
+            </section>
+        </div>
+
+        <section class="selection-review" aria-label="Selected comparison">
+            <div><h2>Your comparison</h2><p id="selection-summary">Choose a project and a commit on each side.</p><p id="selection-status" role="status" aria-live="polite"></p></div>
+            <button id="confirm-selection" class="primary" type="submit" disabled>Confirm selection <span aria-hidden="true">→</span></button>
+        </section>
+        <p class="footer-note">Confirm to create or reuse comparison project branches at the selected revisions.</p>
+        <section class="cleanup-section" aria-label="Comparison project cleanup">
+            <button id="cleanup-projects" class="secondary danger" type="button">Clean up comparison projects</button>
+            <div id="cleanup-confirmation" hidden>
+                <p>Permanently delete all generated comparison projects tracked by this registry? Their dataset and managed-folder data will be kept. Successfully cleaned entries will be removed from the registry.</p>
+                <button id="confirm-cleanup" class="secondary danger" type="button">Delete registered projects</button>
+                <button id="cancel-cleanup" class="secondary" type="button">Cancel</button>
+            </div>
+            <p id="cleanup-status" class="notice" role="status" aria-live="polite"></p>
+            <ul id="cleanup-failures" class="notice error" hidden></ul>
+        </section>
+    </form>
+
+    <section id="flow-screen" hidden aria-labelledby="flow-title">
+        <header class="flow-header">
+            <div class="flow-heading">
+                <div class="flow-heading-copy">
+                    <div class="eyebrow">BASELINE → COMPARISON</div>
+                    <div class="flow-title-row">
+                        <h1 id="flow-title" tabindex="-1">Compare Flow versions</h1>
+                        <button id="back-to-selection" class="secondary" type="button">← Change selection</button>
+                    </div>
+                    <details id="flow-selection-details" class="flow-selection-details">
+                        <summary id="flow-project"></summary>
+                        <p id="flow-preparation" class="field-note" role="status" aria-live="polite"></p>
+                    </details>
+                </div>
+            </div>
+            <div class="flow-header-actions">
+                <div class="comparison-capsule">
+                    <div class="diff-legend" aria-label="Change legend">
+                        <span data-diff-status="deleted">− Deleted</span><span data-diff-status="modified">~ Modified</span>
+                        <span data-diff-status="added">+ Added</span><span data-diff-status="unchanged">· Unchanged</span>
+                    </div>
+                    <p id="comparison-summary" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </header>
+        <details id="comparison-coverage" class="comparison-coverage field-note" hidden>
+            <summary><svg class="coverage-warning-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 3 22 21H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg> Limited configuration coverage</summary>
+            <ul id="comparison-coverage-issues"></ul>
+        </details>
+        <details id="json-comparison" class="json-comparison">
+            <summary>Project structures and JSON diff</summary>
+            <div class="diff-object-picker">
+                <label for="diff-object">Inspect</label>
+                <select id="diff-object"><option value="">Both complete Flow structures</option></select>
+            </div>
+            <button id="open-inspector" class="secondary" type="button">Open comparison</button>
+            <p class="field-note">Choose an object above or click a modified Flow item to compare it in an overlay.</p>
+            <div class="json-diff-scroll" tabindex="0">
+                <table class="json-diff" aria-label="Complete Flow structures comparison"><thead><tr><th id="flow-json-baseline-title">Baseline</th><th id="flow-json-target-title">Comparison</th></tr></thead>
+                    <tbody id="flow-json-rows"></tbody></table>
+            </div>
+        </details>
+        <dialog id="object-inspector" class="object-inspector" aria-labelledby="inspector-title" aria-describedby="inspector-object-name">
+            <header class="inspector-header">
+                <div>
+                    <h2 id="inspector-title">Compare object versions</h2>
+                    <p id="inspector-object-name"></p>
+                </div>
+                <span id="inspector-change-status" class="inspector-change-status"></span>
+                <button id="close-inspector" class="secondary inspector-close" type="button" aria-label="Close comparison" autofocus>×</button>
+            </header>
+            <p id="diff-object-status" class="field-note">Select a Flow object to inspect its settings, inputs, outputs, and zone.</p>
+            <div class="diff-tabs" role="tablist" aria-label="Comparison view">
+                <button id="json-diff-tab" type="button" role="tab" aria-selected="true" aria-controls="json-diff-panel">JSON diff</button>
+                <button id="recipe-code-tab" type="button" role="tab" aria-selected="false" aria-controls="recipe-code-panel" tabindex="-1" hidden>Recipe code</button>
+                <button id="visual-inspector-tab" type="button" role="tab" aria-selected="false" aria-controls="visual-inspector-panel" tabindex="-1" hidden>Visual Inspector</button>
+            </div>
+            <div id="json-diff-panel" role="tabpanel" aria-labelledby="json-diff-tab" class="json-diff-scroll" tabindex="0">
+                <table class="json-diff"><thead><tr><th id="json-baseline-title">Baseline</th><th id="json-target-title">Comparison</th></tr></thead>
+                    <tbody id="json-diff-rows"></tbody></table>
+            </div>
+            <div id="recipe-code-panel" role="tabpanel" aria-labelledby="recipe-code-tab" class="json-diff-scroll recipe-code-scroll" tabindex="0" hidden>
+                <table class="json-diff recipe-code-diff" aria-label="Recipe source code diff"><thead><tr><th id="code-baseline-title">Baseline</th><th id="code-target-title">Comparison</th></tr></thead>
+                    <tbody id="recipe-code-rows"></tbody></table>
+            </div>
+            <div id="visual-inspector-panel" role="tabpanel" aria-labelledby="visual-inspector-tab" class="split-inspector" tabindex="0" hidden></div>
+            <footer class="inspector-footer"><button id="close-inspector-footer" class="secondary" type="button">Close</button></footer>
+        </dialog>
+        <div class="flow-toolbar">
+            <div class="flow-legend" aria-label="Flow legend">
+                <span><i class="legend-shape dataset"></i>Dataset</span>
+                <span><i class="legend-shape recipe"></i>Visual recipe</span>
+                <span><i class="legend-shape code-recipe"></i>Code recipe</span>
+                <span><i class="legend-shape plugin-recipe"></i>Plugin recipe</span>
+                <span><i class="legend-shape ml-recipe"></i>ML recipe</span>
+                <span><i class="legend-shape model"></i>Trained model</span>
+                <span><i class="legend-shape agent"></i>Agent</span>
+                <span><i class="legend-shape llm-recipe"></i>LLM recipe</span>
+                <span><i class="legend-shape agent-tool"></i>Agent tool</span>
+            </div>
+            <div class="zoom-controls" aria-label="Flow zoom">
+                <button id="refresh-flow" class="secondary" type="button">Refresh Flow</button>
+                <button id="flow-zoom-out" class="secondary" type="button" aria-label="Zoom out">−</button>
+                <span id="flow-zoom-label">100%</span>
+                <button id="flow-zoom-in" class="secondary" type="button" aria-label="Zoom in">+</button>
+                <button id="flow-fit" class="secondary" type="button">Fit</button>
+            </div>
+        </div>
+        <div class="flow-feedback">
+            <p id="flow-status" role="status" aria-live="polite"></p>
+            <button id="retry-flow" class="secondary" type="button" hidden>Retry</button>
+            <p class="flow-hint">Click a modified item to inspect its diff · Drag to pan · Scroll to zoom</p>
+        </div>
+        <div id="flow-viewport" class="flow-viewport" tabindex="0" role="region" aria-label="Flow comparison diagram. Drag or use arrow keys to pan. Scroll to zoom at the pointer.">
+            <div id="flow-spinner" class="flow-loading" aria-hidden="true" hidden><span class="loading-spinner"></span></div>
+            <svg id="flow-graph" role="img" aria-label="Flow comparison" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+    </section>
+</main>

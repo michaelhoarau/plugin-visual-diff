@@ -1,0 +1,20 @@
+{
+    "meta": {
+        "label": "Visual Flow Diff",
+        "description": "Select project commits to compare within one project or across a parent and branch project.",
+        "icon": "fas fa-code-branch"
+    },
+    "baseType": "STANDARD",
+    "hasBackend": "true",
+    "noJSSecurity": "false",
+    "standardWebAppLibraries": ["dataiku"],
+    "hideWebAppConfig": "false",
+    "params": [
+        {
+            "name": "registry_dataset", "type": "DATASET", "label": "Comparison registry dataset",
+            "description": "Select a dedicated empty Snowflake table dataset. The backend initializes its registry columns and DSS schema automatically. It needs dataset schema-write access and Snowflake table creation/alteration permissions for initial setup, then SELECT, INSERT, and UPDATE (plus DELETE for cleanup). Use one active preparation writer per registry dataset.",
+            "mandatory": true
+        }
+    ],
+    "roles": []
+}

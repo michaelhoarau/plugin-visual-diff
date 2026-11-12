@@ -1,0 +1,15 @@
+{
+    "id": "visual-flow-diff",
+    "version": "0.0.1",
+    "meta": {
+        "label": "Visual flow diff",
+        "description": "Plugin description",
+        "author": "michael.hoarau",
+        "provider": "michael.hoarau",
+        "icon": "fas fa-code-branch",
+        "recipesCategory": "",
+        "tags": [],
+        "url": "",
+        "licenseInfo": "Apache Software License"
+    }
+}

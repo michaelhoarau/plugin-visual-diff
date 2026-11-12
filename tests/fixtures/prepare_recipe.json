@@ -1,0 +1,139 @@
+{
+  "before": {
+    "name": "prepare_web_new_customers_enriched",
+    "kind": "recipe",
+    "subType": "shaker",
+    "config": {
+      "definition": {
+        "type": "shaker",
+        "name": "prepare_web_new_customers_enriched",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers_enriched",
+                "appendMode": false
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineType": "DSS"
+        }
+      },
+      "payload": {
+        "origin": "PREPARE_RECIPE",
+        "steps": [
+          {
+            "type": "GeoIPResolver",
+            "metaType": "PROCESSOR",
+            "params": {
+              "inCol": "ip",
+              "outColPrefix": "ip_",
+              "extract_country": true,
+              "extract_countrycode": false,
+              "extract_countrycode3": false,
+              "extract_region": false,
+              "extract_city": false,
+              "extract_postalcode": false,
+              "extract_latlng": false,
+              "extract_geopoint": true,
+              "extract_timezone": false,
+              "extract_continentcode": false
+            },
+            "disabled": false,
+            "preview": false,
+            "alwaysShowComment": false
+          },
+          {
+            "type": "CreateColumnWithGREL",
+            "metaType": "PROCESSOR",
+            "params": {
+              "column": "pages_visited_gt_7",
+              "expression": "val(\"pages_visited\") > 7",
+              "errorColumn": ""
+            },
+            "disabled": false,
+            "preview": true,
+            "alwaysShowComment": false,
+            "comment": "Step generated using prompt : Add a new column with true when pages_visited > 7"
+          }
+        ],
+        "columnsSelection": {
+          "mode": "ALL"
+        }
+      }
+    }
+  },
+  "after": {
+    "name": "prepare_web_new_customers_enriched",
+    "kind": "recipe",
+    "subType": "shaker",
+    "config": {
+      "definition": {
+        "type": "shaker",
+        "name": "prepare_web_new_customers_enriched",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "web_new_customers_enriched",
+                "appendMode": false
+              }
+            ]
+          }
+        },
+        "params": {
+          "engineType": "DSS"
+        }
+      },
+      "payload": {
+        "origin": "PREPARE_RECIPE",
+        "steps": [
+          {
+            "type": "GeoIPResolver",
+            "metaType": "PROCESSOR",
+            "params": {
+              "inCol": "ip",
+              "outColPrefix": "ip_",
+              "extract_country": true,
+              "extract_countrycode": true,
+              "extract_countrycode3": false,
+              "extract_region": false,
+              "extract_city": false,
+              "extract_postalcode": false,
+              "extract_latlng": false,
+              "extract_geopoint": true,
+              "extract_timezone": false,
+              "extract_continentcode": false
+            },
+            "disabled": false,
+            "preview": false,
+            "alwaysShowComment": false
+          }
+        ],
+        "columnsSelection": {
+          "mode": "ALL"
+        }
+      }
+    }
+  }
+}
