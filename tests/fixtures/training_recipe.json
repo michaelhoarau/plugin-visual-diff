@@ -1,0 +1,127 @@
+{
+  "before": {
+    "kind": "ml-recipe",
+    "name": "train_revenue_model",
+    "subType": "prediction_training",
+    "coverage": "settings",
+    "config": {
+      "definition": {
+        "type": "prediction_training",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "customer_history"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "revenue_model"
+              }
+            ]
+          }
+        }
+      },
+      "payload": {
+        "targetVariable": "revenue",
+        "predictionType": "REGRESSION",
+        "perFeature": {
+          "customer_id": {
+            "role": "REJECT"
+          },
+          "visits": {
+            "role": "INPUT",
+            "missingHandlingMethod": "MEDIAN"
+          }
+        },
+        "algorithms": {
+          "RANDOM_FOREST_REGRESSION": {
+            "enabled": true,
+            "nEstimators": 100,
+            "maxDepth": 8
+          },
+          "RIDGE_REGRESSION": {
+            "enabled": false
+          }
+        },
+        "trainTestSplit": {
+          "trainRatio": 0.8,
+          "seed": 42
+        },
+        "evaluationMetric": "RMSE",
+        "engine": "PY_MEMORY",
+        "customSetting": {
+          "note": ""
+        }
+      }
+    }
+  },
+  "after": {
+    "kind": "ml-recipe",
+    "name": "train_revenue_model",
+    "subType": "prediction_training",
+    "coverage": "settings",
+    "config": {
+      "definition": {
+        "type": "prediction_training",
+        "inputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "customer_history"
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "main": {
+            "items": [
+              {
+                "ref": "revenue_model"
+              }
+            ]
+          }
+        }
+      },
+      "payload": {
+        "targetVariable": "revenue",
+        "predictionType": "REGRESSION",
+        "perFeature": {
+          "customer_id": {
+            "role": "REJECT"
+          },
+          "visits": {
+            "role": "INPUT",
+            "missingHandlingMethod": "MEAN"
+          },
+          "country": {
+            "role": "INPUT"
+          }
+        },
+        "algorithms": {
+          "RANDOM_FOREST_REGRESSION": {
+            "enabled": true,
+            "nEstimators": 200,
+            "maxDepth": 12
+          },
+          "RIDGE_REGRESSION": {
+            "enabled": true
+          }
+        },
+        "trainTestSplit": {
+          "trainRatio": 0.7,
+          "seed": 42
+        },
+        "evaluationMetric": "RMSE",
+        "engine": "PY_MEMORY",
+        "sampling": {
+          "maxRecords": 100000
+        }
+      }
+    }
+  }
+}

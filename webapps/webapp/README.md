@@ -530,6 +530,22 @@ empty scripts and missing recipe versions have explicit notices. The JSON tab
 retains every captured setting, including editor preview, engine and sampling
 metadata omitted from the visual view.
 
+Prediction and clustering training recipes also open **Visual Inspector** by default.
+They reuse Prepare's paired fields, read-only checkboxes, expandable sections and
+red/green value highlights. Captured settings are grouped into training task,
+input/output, features, algorithms, training/evaluation, runtime and additional
+settings. Named parameters align by their full path, so added features and changed
+hyperparameters do not shift unrelated fields. Ordered lists retain their order.
+Changed sections open initially; unchanged sections remain collapsed. Unknown
+settings are retained, and JSON diff remains available. Implicit training recipes
+with graph-only coverage show an explicit unavailable-settings notice, because
+those snapshots contain no training configuration. This panel compares captured
+recipe settings, not trained model binaries or execution results.
+
+The preview's **Model training comparison** project includes feature changes,
+hyperparameter changes, an enabled algorithm, a changed train/test ratio and
+added/removed settings.
+
 Step alignment uses unique IDs where available, otherwise exact processor content
 followed by unambiguous same-type edits between matching steps. Insertions do not
 shift downstream comparisons. Ambiguous repeated processors and reordered steps
@@ -557,7 +573,7 @@ From the repository root:
 
 ```sh
 node --check webapps/webapp/app.js
-node --test tests/test_app.js tests/test_layout.js tests/test_json_diff.js tests/test_split_inspector.js tests/test_prepare_inspector.js
+node --test tests/test_app.js tests/test_layout.js tests/test_json_diff.js tests/test_split_inspector.js tests/test_prepare_inspector.js tests/test_training_inspector.js
 python3 -m unittest discover -s tests -v
 python3 tests/preview.py
 ```

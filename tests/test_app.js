@@ -1239,3 +1239,52 @@ test('same-project comparison with only one commit leaves target unselected', as
     assert.equal(ui.get('target-commits').children[0].children[0].checked, false);
     assert.equal(ui.get('confirm-selection').disabled, true);
 });
+
+test('Model training inspector reuses paired fields, checkboxes, granular highlights and JSON navigation', async () => {
+    const { before, after } = structuredClone(require('./fixtures/training_recipe.json'));
+    const unsafe = '<img src=x onerror=alert(1)>';
+    after.config.payload.futureOption = unsafe;
+    const graphOnly = { kind: 'ml-recipe', subType: 'prediction_training', coverage: 'graph-only', config: {} };
+    const clustering = structuredClone(after);
+    clustering.config.definition.type = 'clustering_training';
+    const graph = { nodes: ['modified', 'added', 'deleted', 'missing', 'clustering', 'dataset'].map((id) => ({
+        id, name: id, kind: id === 'dataset' ? 'dataset' : 'ml-recipe', diffStatus: 'modified'
+    })), edges: [] };
+    const ui = await setup(async () => ({ branches: [child] }), async () => graph, undefined, undefined, undefined, undefined,
+        () => ({ graph, baseline: { model: { objects: { modified: before, deleted: before } } },
+            target: { model: { objects: { modified: after, added: after, missing: graphOnly, clustering, dataset: { kind: 'dataset' } } } },
+            counts: { modified: 1, added: 1, deleted: 1, unchanged: 0 } }));
+    await confirmBranch(ui);
+    const inspect = (id) => { ui.get('diff-object').value = id; ui.get('diff-object').fire('change'); };
+    const descendants = (node) => [node, ...node.children.flatMap(descendants)];
+    const nodes = () => descendants(ui.get('visual-inspector-panel'));
+    inspect('modified');
+    assert.equal(ui.get('visual-inspector-tab').attributes['aria-selected'], 'true');
+    assert.equal(ui.get('recipe-code-tab').hidden, true);
+    assert.ok(nodes().some((node) => node.attributes['aria-label'] === 'Previous Algorithms / RANDOM FOREST REGRESSION / N Estimators: 100'));
+    assert.ok(nodes().some((node) => node.attributes['aria-label'] === 'New Algorithms / RANDOM FOREST REGRESSION / N Estimators: 200'));
+    assert.ok(!nodes().some((node) => /^(Previous|New) Target variable:/.test(node.attributes['aria-label'] || '')));
+    assert.ok(nodes().some((node) => node.className === 'prepare-checkbox is-checked'));
+    assert.ok(nodes().some((node) => node.textContent === unsafe));
+    assert.ok(nodes().every((node) => node.innerHTML === undefined));
+    assert.ok(nodes().some((node) => node.textContent === 'Not present in this section'));
+    const sections = nodes().filter((node) => node.className === 'prepare-step');
+    assert.ok(sections.some((node) => node.attributes['data-diff-status'] === 'modified' && node.open));
+    assert.ok(sections.some((node) => node.attributes['data-diff-status'] === 'unchanged' && !node.open));
+    ui.get('visual-inspector-tab').fire('keydown', { key: 'Home' });
+    assert.equal(ui.get('json-diff-panel').hidden, false);
+    assert.ok(ui.get('json-diff-rows').children.length > 2);
+    ui.get('json-diff-tab').fire('keydown', { key: 'ArrowRight' });
+    assert.equal(ui.get('visual-inspector-panel').hidden, false);
+    for (const id of ['added', 'deleted']) {
+        inspect(id);
+        assert.ok(nodes().some((node) => node.textContent === 'No model training recipe in this version.'));
+    }
+    inspect('clustering');
+    assert.equal(ui.get('visual-inspector-tab').hidden, false);
+    inspect('missing');
+    assert.ok(nodes().some((node) => /settings are unavailable/.test(node.textContent)));
+    assert.ok(!nodes().some((node) => node.className === 'prepare-step'));
+    inspect('dataset');
+    assert.equal(ui.get('visual-inspector-tab').hidden, true);
+});

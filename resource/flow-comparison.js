@@ -319,6 +319,48 @@
         }) };
     }
 
+    /** Adapt captured training settings into stable, aligned groups for the shared field renderer.
+     * Implicit recipes may contain graph metadata only: never present that as ML settings.
+     */
+    function trainingRecipe(object) {
+        const type = object?.config?.definition?.type || object?.subType;
+        if (!['recipe', 'ml-recipe'].includes(object?.kind) || !['prediction_training', 'clustering_training'].includes(type)) return undefined;
+        const config = object.config;
+        if (object.coverage === 'graph-only' || object.coverage === 'external-reference' || !record(config?.payload)) {
+            return { unavailable: true, steps: [] };
+        }
+        const titles = ['Training task', 'Input and output', 'Features', 'Algorithms', 'Training and evaluation', 'Runtime', 'Additional settings'];
+        const groups = titles.map((title, index) => ({ index, title, type: 'training-section', identity: title, known: true, fields: [] }));
+        const label = (key) => ({ targetVariable: 'Target variable', predictionType: 'Prediction type',
+            modelId: 'Saved model ID', trainTestSplit: 'Train / test split', perFeature: 'Per-feature settings' }[key]
+            || key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]/g, ' ').replace(/^./, (c) => c.toUpperCase()));
+        const category = (key) => /^(inputs|outputs)$/.test(key) ? 1
+            : /feature|preprocess|role|column|weight/i.test(key) ? 2
+            : /algorithm|hyperparam|modeling|gridsearch/i.test(key) ? 3
+            : /train|test|split|evaluation|metric|sampling|crossvalid|kfold|seed/i.test(key) ? 4
+            : /engine|runtime|container|spark|execution|codeenv|backend/i.test(key) ? 5
+            : /target|prediction|task|modelid|sessionid|analysisid/i.test(key) ? 0 : 6;
+        function add(group, path, caption, value) {
+            // Flatten named settings so additions align by name; retain ordered lists intact.
+            if (record(value) && Object.keys(value).length) {
+                Object.keys(value).sort().forEach((key) => add(group, [...path, key], caption + ' / ' + label(key), value[key]));
+            } else groups[group].fields.push({ key: JSON.stringify(path), label: caption, value, signature: stable(value) });
+        }
+        add(0, ['type'], 'Recipe type', type);
+        function settings(source, path) {
+            Object.keys(source).sort().forEach((key) => {
+                if (key === 'type' && path[0] === 'definition') return;
+                // DSS can nest these families in params; route the contained keys independently.
+                if (['params', 'settings'].includes(key) && record(source[key])) settings(source[key], [...path, key]);
+                else add(category(key), [...path, key], label(key), source[key]);
+            });
+        }
+        settings(config.payload, ['payload']);
+        if (record(config.definition)) settings(config.definition, ['definition']);
+        return { steps: groups.filter((group) => group.fields.length).map((group) => ({ ...group,
+            signature: stable(group.fields.map(({ key, value }) => ({ key, value }))) })) };
+    }
+
     /** Sequence alignment: exact steps/unique IDs first, then unambiguous same-type edits within gaps.
      * Reordered steps can appear as removed/added; repeated ambiguous edits are never guessed.
      * Sparse LIS keeps memory bounded even for large Prepare scripts.
@@ -386,5 +428,5 @@
         suffixLeft.forEach((step, index) => emit(step, suffixRight[index]));
         return rows;
     }
-    return { jsonRows, codeRows, recipeCode, splitRecipe, splitConditionRows, prepareRecipe, prepareStepRows, prepareMapping, prepareMappingRows, prepareIfRule };
+    return { trainingRecipe, jsonRows, codeRows, recipeCode, splitRecipe, splitConditionRows, prepareRecipe, prepareStepRows, prepareMapping, prepareMappingRows, prepareIfRule };
 }));

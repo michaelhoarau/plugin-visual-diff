@@ -1158,8 +1158,10 @@
         panel.append(legend);
     }
 
-    /** Render aligned Prepare processors as read-only settings, never as snapshot HTML. */
-    function renderPrepareInspector(left, right) {
+    /** Shared paired-field panel for Prepare processors and model training sections. */
+    function renderSettingsInspector(left, right, training = false) {
+        const recipeName = training ? 'model training' : 'Prepare';
+        const unit = training ? 'section' : 'step';
         const panel = $("visual-inspector-panel");
         panel.replaceChildren();
         const element = (tag, text, className) => {
@@ -1172,15 +1174,16 @@
         const unavailable = left?.unavailable || right?.unavailable;
         const rows = unavailable ? [] : FlowComparison.prepareStepRows(left?.steps, right?.steps);
         const counts = Object.fromEntries(['modified', 'deleted', 'added', 'unchanged'].map((status) => [status, rows.filter((row) => row.status === status).length]));
-        panel.append(element('p', unavailable ? 'Step changes unavailable: a captured script is missing.'
-            : `${counts.modified} modified · ${counts.deleted} removed · ${counts.added} added · ${counts.unchanged} unchanged steps`, 'prepare-summary'));
-        panel.append(element('p', 'Read-only configuration comparison. Expand a step to compare both versions.', 'field-note'));
+        const unavailableMessage = training ? 'Training changes unavailable: captured settings are missing.' : 'Step changes unavailable: a captured script is missing.';
+        panel.append(element('p', unavailable ? unavailableMessage
+            : `${counts.modified} modified · ${counts.deleted} removed · ${counts.added} added · ${counts.unchanged} unchanged ${unit}s`, 'prepare-summary'));
+        panel.append(element('p', `Read-only configuration comparison. Expand a ${unit} to compare both versions.`, 'field-note'));
         const headings = element('div', undefined, 'split-version-headings');
         ['json-baseline-title', 'json-target-title'].forEach((id) => headings.append(element('strong', $(id).textContent)));
         panel.append(headings);
         const states = element('div', undefined, 'split-version-states');
-        [left, right].forEach((model) => states.append(element('p', !model ? 'No Prepare recipe in this version.' : model.unavailable
-            ? 'Prepare settings are unavailable. See JSON diff for the captured configuration.' : model.steps.length ? '' : 'No preparation steps in this version.')));
+        [left, right].forEach((model) => states.append(element('p', !model ? `No ${recipeName} recipe in this version.` : model.unavailable
+            ? `${recipeName} settings are unavailable. See JSON diff for the captured configuration.` : model.steps.length ? '' : training ? 'No training settings in this version.' : 'No preparation steps in this version.')));
         if (!readable(left) || !readable(right) || !left.steps.length || !right.steps.length) panel.append(states);
         const show = (value) => value === undefined ? 'Not specified' : value === '' ? '(empty)' : typeof value === 'string' ? value : JSON.stringify(value, null, 2);
         const highlight = (side) => side ? 'split-added' : 'split-removed';
@@ -1252,7 +1255,7 @@
             [row.left, row.right].forEach((step, side) => {
                 const title = element('span', undefined, 'prepare-step-title');
                 const other = side ? row.left : row.right;
-                const text = step ? `${step.index + 1}. ${step.title}` : row.status === 'added' ? 'No corresponding step in Baseline' : 'No corresponding step in Comparison';
+                const text = step ? training ? step.title : `${step.index + 1}. ${step.title}` : row.status === 'added' ? `No corresponding ${unit} in Baseline` : `No corresponding ${unit} in Comparison`;
                 title.append(element('strong', text, step && (!other || step.title !== other.title) ? (side ? 'split-added' : 'split-removed') : ''));
                 if (step) {
                     const status = row.status === 'deleted' ? 'Removed' : changeLabels[row.status];
@@ -1281,8 +1284,11 @@
                     const otherStep = side ? row.left : row.right;
                     const other = otherStep?.fields.find((item) => item.key === key);
                     if (!step) {
-                        if (!index) cell.append(element('p', side ? 'Step removed. No corresponding step in this version.' : 'Step added. No corresponding step in this version.', 'split-empty'));
-                    } else if (!field) cell.append(element('span', 'Not present in this processor', 'split-empty'));
+                        if (!index) {
+                            const label = training ? 'Section' : 'Step';
+                            cell.append(element('p', `${label} ${side ? 'removed' : 'added'}. No corresponding ${unit} in this version.`, 'split-empty'));
+                        }
+                    } else if (!field) cell.append(element('span', training ? 'Not present in this section' : 'Not present in this processor', 'split-empty'));
                     else {
                         cell.append(element('span', field.label, 'prepare-field-label'));
                         const changed = !otherStep || !other || field.signature !== other.signature;
@@ -1324,7 +1330,7 @@
         const legend = element('p', undefined, 'split-legend');
         legend.append(element('span', 'Previous or removed', 'split-removed'), element('span', 'New or added', 'split-added'), element('span', 'Unchanged values stay neutral.'));
         panel.append(legend);
-        panel.append(element('p', 'Editor preview and layout state are omitted here. Engine, sampling, extra metadata and the full captured configuration remain available in JSON diff.', 'field-note'));
+        panel.append(element('p', training ? 'Captured recipe settings are shown here. Full configuration is available in JSON diff. Trained model binaries and execution results are not compared.' : 'Editor preview and layout state are omitted here. Engine, sampling, extra metadata and the full captured configuration remain available in JSON diff.', 'field-note'));
     }
 
     /** Render JSON or source lines as text so payloads cannot inject HTML. */
@@ -1340,7 +1346,9 @@
         const hasSplit = Boolean(id) && (beforeSplit !== undefined || afterSplit !== undefined);
         const beforePrepare = FlowComparison.prepareRecipe(before), afterPrepare = FlowComparison.prepareRecipe(after);
         const hasPrepare = Boolean(id) && (beforePrepare !== undefined || afterPrepare !== undefined);
-        const hasVisual = hasSplit || hasPrepare;
+        const beforeTraining = FlowComparison.trainingRecipe(before), afterTraining = FlowComparison.trainingRecipe(after);
+        const hasTraining = Boolean(id) && (beforeTraining !== undefined || afterTraining !== undefined);
+        const hasVisual = hasSplit || hasPrepare || hasTraining;
         if (id !== inspectedId) activeDiffTab = hasVisual ? 'visual' : hasCode ? 'code' : 'json';
         if ((activeDiffTab === 'code' && !hasCode) || (activeDiffTab === 'visual' && !hasVisual)) activeDiffTab = 'json';
         inspectedId = id;
@@ -1356,7 +1364,8 @@
         $("diff-object-status").hidden = Boolean(id);
         $("diff-object-status").textContent = id ? "" : "Both complete canonical Flow structures. Generated project identities and automatic version timestamps are excluded.";
         if (activeDiffTab === 'visual') {
-            if (hasPrepare) renderPrepareInspector(beforePrepare, afterPrepare);
+            if (hasTraining) renderSettingsInspector(beforeTraining, afterTraining, true);
+            else if (hasPrepare) renderSettingsInspector(beforePrepare, afterPrepare);
             else renderSplitInspector(beforeSplit, afterSplit, before, after);
             return;
         }
