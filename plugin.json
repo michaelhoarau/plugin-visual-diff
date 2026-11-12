@@ -1,9 +1,9 @@
 {
     "id": "visual-flow-diff",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "meta": {
         "label": "Visual flow diff",
-        "description": "Plugin description",
+        "description": "Visually compare Dataiku Flows across commits and branches to explore changes in structure and configuration.",
         "author": "michael.hoarau",
         "provider": "michael.hoarau",
         "icon": "fas fa-code-branch",
